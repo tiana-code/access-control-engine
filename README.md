@@ -234,6 +234,4 @@ This library is extracted from a production system and is under active refinemen
 
 ## License
 
-[CC BY-NC 4.0](LICENSE) — Copyright (c) 2026 itiana
-
-Commercial use is not permitted without explicit written permission.
+MIT — see [LICENSE](./LICENSE)
