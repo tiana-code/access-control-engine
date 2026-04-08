@@ -6,6 +6,7 @@ import com.accesscontrol.dto.response.WorkflowResponse;
 import com.accesscontrol.exception.InvalidTransitionException;
 import com.accesscontrol.exception.NotFoundException;
 import com.accesscontrol.model.ApprovalWorkflow;
+import com.accesscontrol.model.enums.WorkflowAction;
 import com.accesscontrol.model.enums.WorkflowState;
 import com.accesscontrol.repository.ApprovalWorkflowRepository;
 import com.accesscontrol.service.WorkflowEngine;
@@ -30,7 +31,7 @@ public class WorkflowEngineImpl implements WorkflowEngine {
         ApprovalWorkflow workflow = new ApprovalWorkflow(
                 request.resourceId(), request.resourceType(), request.initiatorId());
         workflow.setDescription(request.description());
-        workflow.transition(WorkflowState.PENDING_REVIEW, request.initiatorId(), "Workflow started");
+        workflow.transition(WorkflowAction.SUBMIT, request.initiatorId(), "Workflow started");
 
         return WorkflowResponse.from(workflowRepository.save(workflow),
                 WorkflowTransitions.allowedActions(WorkflowState.PENDING_REVIEW));
@@ -42,23 +43,21 @@ public class WorkflowEngineImpl implements WorkflowEngine {
         ApprovalWorkflow workflow = workflowRepository.findByIdWithEvents(workflowId)
                 .orElseThrow(() -> new NotFoundException("Workflow", workflowId));
 
-        if (workflow.getState().isTerminal()) {
+        WorkflowState currentState = workflow.getState();
+
+        if (!WorkflowTransitions.resolve(currentState, request.action()).isPresent()) {
             throw new InvalidTransitionException(
-                    "Workflow is in terminal state: " + workflow.getState());
+                    "Action " + request.action() + " is not allowed from state " + currentState +
+                            ". Allowed: " + WorkflowTransitions.allowedActions(currentState));
         }
 
-        WorkflowState currentState = workflow.getState();
-        WorkflowState nextState = WorkflowTransitions.resolve(currentState, request.action())
-                .orElseThrow(() -> new InvalidTransitionException(
-                        "Action " + request.action() + " is not allowed from state " + currentState +
-                                ". Allowed: " + WorkflowTransitions.allowedActions(currentState)));
-
-        workflow.transition(nextState, request.actorId(), request.comment());
+        workflow.transition(request.action(), request.actorId(), request.comment());
 
         if (request.assigneeId() != null) {
             workflow.setCurrentAssigneeId(request.assigneeId());
         }
 
+        WorkflowState nextState = workflow.getState();
         return WorkflowResponse.from(workflowRepository.save(workflow), WorkflowTransitions.allowedActions(nextState));
     }
 

@@ -1,5 +1,6 @@
 package com.accesscontrol.model;
 
+import com.accesscontrol.model.enums.GrantState;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -52,6 +53,10 @@ public class ResourcePermission {
     @Column(name = "revoked", nullable = false)
     private boolean revoked = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "grant_state", nullable = false, length = 16)
+    private GrantState grantState = GrantState.ACTIVE;
+
     protected ResourcePermission() {
     }
 
@@ -84,12 +89,22 @@ public class ResourcePermission {
     }
 
     public boolean isExpired() {
-        return revoked || (expiresAt != null && Instant.now().isAfter(expiresAt));
+        return grantState == GrantState.REVOKED
+                || grantState == GrantState.EXPIRED
+                || revoked
+                || (expiresAt != null && Instant.now().isAfter(expiresAt));
     }
 
     public void revoke() {
         this.revoked = true;
+        this.grantState = GrantState.REVOKED;
         this.expiresAt = Instant.now();
+    }
+
+    public void markExpired() {
+        if (expiresAt != null && Instant.now().isAfter(expiresAt)) {
+            this.grantState = GrantState.EXPIRED;
+        }
     }
 
     public void extend(Instant newExpiresAt) {
