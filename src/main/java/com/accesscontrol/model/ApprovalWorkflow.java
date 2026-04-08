@@ -2,6 +2,7 @@ package com.accesscontrol.model;
 
 import com.accesscontrol.model.enums.WorkflowAction;
 import com.accesscontrol.model.enums.WorkflowState;
+import com.accesscontrol.service.WorkflowTransitions;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -84,10 +85,14 @@ public class ApprovalWorkflow {
         event.setWorkflow(this);
     }
 
-    public void transition(WorkflowState targetState, UUID actorId, String comment) {
-        if (state.isTerminal()) {
-            throw new IllegalStateException("Cannot transition from terminal state: " + state);
+    public void transition(WorkflowAction action, UUID actorId, String comment) {
+        if (this.state.isTerminal()) {
+            throw new IllegalStateException("Cannot transition from terminal state: " + this.state);
         }
+
+        WorkflowState targetState = WorkflowTransitions.resolve(this.state, action)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Invalid transition: action " + action + " not allowed from state " + this.state));
 
         WorkflowState previousState = this.state;
         this.state = targetState;
@@ -97,18 +102,7 @@ public class ApprovalWorkflow {
             this.completedAt = Instant.now();
         }
 
-        WorkflowEvent event = new WorkflowEvent(
-                this, actionFor(targetState), previousState, targetState, actorId, comment);
-        events.add(event);
-    }
-
-    private WorkflowAction actionFor(WorkflowState targetState) {
-        return switch (targetState) {
-            case APPROVED -> WorkflowAction.APPROVE;
-            case REJECTED -> WorkflowAction.REJECT;
-            case CANCELLED -> WorkflowAction.CANCEL;
-            case ESCALATED -> WorkflowAction.ESCALATE;
-            default -> WorkflowAction.SUBMIT;
-        };
+        WorkflowEvent event = new WorkflowEvent(this, action, previousState, targetState, actorId, comment);
+        addEvent(event);
     }
 }

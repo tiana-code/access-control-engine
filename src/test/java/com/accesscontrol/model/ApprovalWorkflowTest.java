@@ -1,5 +1,6 @@
 package com.accesscontrol.model;
 
+import com.accesscontrol.model.enums.WorkflowAction;
 import com.accesscontrol.model.enums.WorkflowState;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +14,7 @@ class ApprovalWorkflowTest {
     @Test
     void transitionToPendingReviewFromDraft() {
         ApprovalWorkflow workflow = createWorkflow();
-        workflow.transition(WorkflowState.PENDING_REVIEW, UUID.randomUUID(), "submitted");
+        workflow.transition(WorkflowAction.SUBMIT, UUID.randomUUID(), "submitted");
 
         assertThat(workflow.getState()).isEqualTo(WorkflowState.PENDING_REVIEW);
         assertThat(workflow.getEvents()).hasSize(1);
@@ -23,8 +24,8 @@ class ApprovalWorkflowTest {
     @Test
     void transitionToApprovedSetsCompletedAt() {
         ApprovalWorkflow workflow = createWorkflow();
-        workflow.transition(WorkflowState.PENDING_REVIEW, UUID.randomUUID(), "submitted");
-        workflow.transition(WorkflowState.APPROVED, UUID.randomUUID(), "looks good");
+        workflow.transition(WorkflowAction.SUBMIT, UUID.randomUUID(), "submitted");
+        workflow.transition(WorkflowAction.APPROVE, UUID.randomUUID(), "looks good");
 
         assertThat(workflow.getState()).isEqualTo(WorkflowState.APPROVED);
         assertThat(workflow.getCompletedAt()).isNotNull();
@@ -34,10 +35,11 @@ class ApprovalWorkflowTest {
     @Test
     void cannotTransitionFromTerminalState() {
         ApprovalWorkflow workflow = createWorkflow();
-        workflow.transition(WorkflowState.APPROVED, UUID.randomUUID(), "approved");
+        workflow.transition(WorkflowAction.SUBMIT, UUID.randomUUID(), "submitted");
+        workflow.transition(WorkflowAction.APPROVE, UUID.randomUUID(), "approved");
 
         assertThatThrownBy(() ->
-                workflow.transition(WorkflowState.REJECTED, UUID.randomUUID(), "too late")
+                workflow.transition(WorkflowAction.REJECT, UUID.randomUUID(), "too late")
         ).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("terminal state");
     }
@@ -45,7 +47,7 @@ class ApprovalWorkflowTest {
     @Test
     void eventRecordsFromAndToState() {
         ApprovalWorkflow workflow = createWorkflow();
-        workflow.transition(WorkflowState.PENDING_REVIEW, UUID.randomUUID(), "submit");
+        workflow.transition(WorkflowAction.SUBMIT, UUID.randomUUID(), "submit");
 
         WorkflowEvent event = workflow.getEvents().getFirst();
         assertThat(event.getFromState()).isEqualTo(WorkflowState.DRAFT);
@@ -55,13 +57,23 @@ class ApprovalWorkflowTest {
     @Test
     void escalateThenApprove() {
         ApprovalWorkflow workflow = createWorkflow();
-        workflow.transition(WorkflowState.PENDING_REVIEW, UUID.randomUUID(), "submit");
-        workflow.transition(WorkflowState.ESCALATED, UUID.randomUUID(), "need senior review");
-        workflow.transition(WorkflowState.APPROVED, UUID.randomUUID(), "approved by senior");
+        workflow.transition(WorkflowAction.SUBMIT, UUID.randomUUID(), "submit");
+        workflow.transition(WorkflowAction.ESCALATE, UUID.randomUUID(), "need senior review");
+        workflow.transition(WorkflowAction.APPROVE, UUID.randomUUID(), "approved by senior");
 
         assertThat(workflow.getState()).isEqualTo(WorkflowState.APPROVED);
         assertThat(workflow.getEvents()).hasSize(3);
         assertThat(workflow.getCompletedAt()).isNotNull();
+    }
+
+    @Test
+    void invalidActionFromCurrentStateThrows() {
+        ApprovalWorkflow workflow = createWorkflow();
+
+        assertThatThrownBy(() ->
+                workflow.transition(WorkflowAction.APPROVE, UUID.randomUUID(), "approve before submit")
+        ).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Invalid transition");
     }
 
     private ApprovalWorkflow createWorkflow() {

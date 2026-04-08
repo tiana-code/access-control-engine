@@ -1,5 +1,6 @@
 package com.accesscontrol.service;
 
+import com.accesscontrol.exception.ConflictException;
 import com.accesscontrol.model.Permission;
 import com.accesscontrol.model.Role;
 import com.accesscontrol.repository.RoleRepository;
@@ -46,5 +47,14 @@ public class RoleHierarchy {
         return resolveEffectiveRoles(candidateRoleId)
                 .stream()
                 .anyMatch(r -> r.getId().equals(ancestorRoleId));
+    }
+
+    public void validateNoCycle(UUID roleId, UUID newParentId) {
+        if (roleId.equals(newParentId)) {
+            throw new ConflictException("Role cannot be its own parent");
+        }
+        if (isDescendantOf(newParentId, roleId)) {
+            throw new ConflictException("Assigning this parent would create a cycle in the role hierarchy");
+        }
     }
 }

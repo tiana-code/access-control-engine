@@ -1,5 +1,6 @@
 package com.accesscontrol.evaluation;
 
+import com.accesscontrol.exception.AccessControlException;
 import com.accesscontrol.model.Permission;
 import com.accesscontrol.model.ResourcePermission;
 import com.accesscontrol.repository.ResourcePermissionRepository;
@@ -84,7 +85,9 @@ public class ResourcePermissionEvaluator implements PermissionEvaluator {
         try {
             return UUID.fromString(name);
         } catch (IllegalArgumentException e) {
-            return UUID.nameUUIDFromBytes(name.getBytes());
+            throw new AccessControlException(
+                "Cannot resolve user identity: authentication name '" + name +
+                "' is not a valid UUID. Configure your security to provide UUID-based principal names.");
         }
     }
 }
