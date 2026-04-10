@@ -1,6 +1,6 @@
 # access-control-engine
 
-Enterprise RBAC and approval workflow orchestration for Spring Boot 3 / Java 21. Provides role hierarchy resolution, resource-level permission evaluation, and a custom approval workflow state machine — without Camunda or any external workflow dependency.
+Enterprise RBAC and approval workflow orchestration for Spring Boot 3 / Java 21. Provides role hierarchy resolution, resource-level permission evaluation, and a custom approval workflow state machine - without Camunda or any external workflow dependency.
 
 ---
 
@@ -17,7 +17,7 @@ A **library JAR** intended to be pulled into a host Spring Boot application. It 
 ## What This Is NOT
 
 - **Not a standalone service.** `bootJar` is disabled. This project produces only a plain JAR.
-- **No REST controllers.** The library exposes service interfaces and security beans — the host application defines its own API layer.
+- **No REST controllers.** The library exposes service interfaces and security beans - the host application defines its own API layer.
 - **Not a general-purpose workflow engine.** The state machine is purpose-built for access-control approval flows.
 
 ---
@@ -112,8 +112,8 @@ A `Role` has a name, an optional description, an optional `parentRole`, and a se
 
 A `ResourcePermission` record binds a user or a role to a permission, optionally scoped to a specific resource UUID and resource type. Grants support:
 
-- `expiresAt` — automatic expiry by timestamp
-- `revoked` / `GrantState` — explicit revocation
+- `expiresAt` - automatic expiry by timestamp
+- `revoked` / `GrantState` - explicit revocation
 - `grantState` values: `ACTIVE`, `REVOKED`, `EXPIRED`
 
 ### Wildcards
@@ -219,8 +219,8 @@ workflowEngine.transition(wf.id(), new WorkflowTransitionRequest(
 ```
 
 Active profiles:
-- `dev` — H2 in-memory, DDL auto-create, Flyway enabled
-- `prod` — expects a real DataSource, Flyway handles schema migration
+- `dev` - H2 in-memory, DDL auto-create, Flyway enabled
+- `prod` - expects a real DataSource, Flyway handles schema migration
 
 ---
 
@@ -234,4 +234,4 @@ This library is extracted from a production system and is under active refinemen
 
 ## License
 
-MIT — see [LICENSE](./LICENSE)
+MIT - see [LICENSE](./LICENSE)
