@@ -29,6 +29,8 @@ public class ResourcePermissionServiceImpl implements ResourcePermissionService 
     @Override
     @Transactional
     public ResourcePermissionResponse grant(GrantPermissionRequest request) {
+        validateGrantTarget(request);
+
         Permission permission = permissionRepository.findById(request.permissionId())
                 .orElseThrow(() -> new NotFoundException("Permission", request.permissionId()));
 
@@ -70,4 +72,12 @@ public class ResourcePermissionServiceImpl implements ResourcePermissionService 
         rp.revoke();
     }
 
+    private void validateGrantTarget(GrantPermissionRequest request) {
+        boolean hasUser = request.userId() != null;
+        boolean hasRole = request.roleId() != null;
+        if (hasUser == hasRole) {
+            throw new IllegalArgumentException(
+                    "Grant must target exactly one of userId or roleId, not both or neither");
+        }
+    }
 }
