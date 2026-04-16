@@ -30,5 +30,5 @@ logs/
 application-local.yml
 application-local.properties
 
-# Do not ignore project instructions
-!CLAUDE.md
+# Claude Code
+CLAUDE.md
