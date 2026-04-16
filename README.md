@@ -228,7 +228,7 @@ Active profiles:
 
 Current version: **0.1.0-alpha**
 
-This library is extracted from a production system and is under active refinement. The API surface (service interfaces, DTOs) may change before a stable 1.0 release.
+This library is under active refinement. The API surface (service interfaces, DTOs) may change before a stable 1.0 release.
 
 ---
 
